@@ -7,5 +7,9 @@
     "package": "dev.fastmc.texture.accessor",
     "refmap": "mixins.fastmc.texture.refmap.json",
     "client": [
+        "AccessorModelBakery",
+        "AccessorModelLoaderRegistry",
+        "AccessorSoundHandler",
+        "AccessorTextureMap"
     ]
 }
