@@ -2,10 +2,7 @@ package dev.fastmc.texture.main;
 
 import dev.fastmc.texture.IPatchedTextureMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.PngSizeInfo;
-import net.minecraft.client.renderer.texture.Stitcher;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.renderer.texture.*;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
@@ -18,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
@@ -25,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(TextureMap.class)
-public abstract class MixinTextureMap implements IPatchedTextureMap {
+public abstract class MixinTextureMap extends AbstractTexture implements IPatchedTextureMap {
     @Shadow
     private int mipmapLevels;
 
@@ -56,11 +54,15 @@ public abstract class MixinTextureMap implements IPatchedTextureMap {
     @Shadow
     public abstract TextureAtlasSprite registerSprite(ResourceLocation location);
 
-    @Shadow @Final private static Logger LOGGER;
+    @Shadow
+    @Final
+    private static Logger LOGGER;
 
-    @Shadow protected abstract boolean generateMipmaps(IResourceManager resourceManager, TextureAtlasSprite texture);
+    @Shadow
+    protected abstract boolean generateMipmaps(IResourceManager resourceManager, TextureAtlasSprite texture);
 
-    private static final ThreadLocal<ArrayDeque<ResourceLocation>> loadingSpritesOverride = ThreadLocal.withInitial(ArrayDeque::new);
+    private static final ThreadLocal<ArrayDeque<ResourceLocation>> loadingSpritesOverride = ThreadLocal.withInitial(
+        ArrayDeque::new);
 
     @Inject(method = "<init>(Ljava/lang/String;Lnet/minecraft/client/renderer/texture/ITextureMapPopulator;Z)V", at = @At("RETURN"))
     private void Inject$init$RETURN(CallbackInfo ci) {
@@ -88,6 +90,12 @@ public abstract class MixinTextureMap implements IPatchedTextureMap {
         finishLoading(stitcher, bar, count, mip);
     }
 
+    @Redirect(method = "loadTextureAtlas", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Maps;newHashMap(Ljava/util/Map;)Ljava/util/HashMap;", remap = false))
+    private HashMap<?, ?> Redirect$loadTextureAtlas$INVOKE$Maps$newHashMap(Map<?, ?> map) {
+        return new HashMap<>();
+
+    }
+
     /**
      * @author Luna
      * @reason Parallel loading
@@ -98,7 +106,7 @@ public abstract class MixinTextureMap implements IPatchedTextureMap {
         IResourceManager resourceManager,
         ResourceLocation location,
         TextureAtlasSprite textureatlassprite,
-        ProgressManager.ProgressBar bar,
+        ProgressBar bar,
         int j,
         int k
     ) {
@@ -111,8 +119,9 @@ public abstract class MixinTextureMap implements IPatchedTextureMap {
 
         for (ResourceLocation loading : loadingSprites) {
             if (location.equals(loading)) {
-                final String error = "circular texture dependencies, stack: [" + com.google.common.base.Joiner.on(", ").join(
-                    loadingSprites) + "]";
+                final String error = "circular texture dependencies, stack: [" + com.google.common.base.Joiner.on(", ")
+                    .join(
+                        loadingSprites) + "]";
                 net.minecraftforge.fml.client.FMLClientHandler.instance().trackBrokenTexture(resourcelocation, error);
                 return j;
             }

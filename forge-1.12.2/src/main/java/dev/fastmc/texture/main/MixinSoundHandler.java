@@ -62,8 +62,8 @@ public abstract class MixinSoundHandler implements IPatchedSoundHandler {
                                 entry.getValue()
                             ));
                         }
-                    } catch (RuntimeException runtimeexception) {
-                        LOGGER.warn("Invalid sounds.json", runtimeexception);
+                    } catch (RuntimeException exception) {
+                        LOGGER.warn("Invalid sounds.json", exception);
                     }
                 }
             } catch (IOException e) {

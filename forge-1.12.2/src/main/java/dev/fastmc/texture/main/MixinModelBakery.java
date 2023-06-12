@@ -20,10 +20,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mixin(value = ModelBakery.class, remap = false)
 public class MixinModelBakery {
     @Mutable
-    @Shadow @Final private Map<Item, List<String>> variantNames;
+    @Shadow(aliases = "field_177613_u")
+    @Final
+    private Map<Item, List<String>> variantNames;
 
     @Mutable
-    @Shadow @Final private Map<ResourceLocation, ModelBlockDefinition> blockDefinitions;
+    @Shadow(aliases = "field_177614_t")
+    @Final
+    private Map<ResourceLocation, ModelBlockDefinition> blockDefinitions;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void Inject$init$RETURN(CallbackInfo ci) {
