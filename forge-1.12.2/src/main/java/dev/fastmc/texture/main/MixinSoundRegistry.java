@@ -18,7 +18,7 @@ public class MixinSoundRegistry {
     @Shadow
     private Map<ResourceLocation, SoundEventAccessor> soundRegistry;
 
-    @Inject(method = "createUnderlyingMap", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Maps;newHashMap()Ljava/util/HashMap;", shift = At.Shift.AFTER, remap = false))
+    @Inject(method = "createUnderlyingMap", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Maps;newHashMap()Ljava/util/HashMap;", shift = At.Shift.AFTER, remap = false), remap = false)
     private void Inject$createUnderlyingMap$INVOKE$Maps$newHashMap(CallbackInfoReturnable<HashMap<?, ?>> cir) {
         soundRegistry = new ConcurrentHashMap<>();
     }
