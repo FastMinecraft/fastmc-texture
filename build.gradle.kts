@@ -1,15 +1,10 @@
-import me.luna.jaroptimizer.JarOptimizerPluginExtension
-import kotlin.math.max
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "dev.fastmc"
 version = "0.0.1"
 
 runVmOptions {
-    val threads = Runtime.getRuntime().availableProcessors()
     add(
-        "-Djoml.fastmath=true",
-        "-Djoml.sinLookup=true",
-        "-Djoml.useMathFma=true",
         "-Xms2G",
         "-Xmx2G",
         "-XX:+UnlockExperimentalVMOptions",
@@ -21,7 +16,6 @@ runVmOptions {
         "-XX:MaxGCPauseMillis=1",
         "-XX:G1NewSizePercent=2",
         "-XX:G1MaxNewSizePercent=10",
-        "-XX:G1HeapRegionSize=1M",
         "-XX:G1ReservePercent=15",
         "-XX:G1HeapWastePercent=10",
         "-XX:G1MixedGCCountTarget=16",
@@ -30,21 +24,19 @@ runVmOptions {
         "-XX:G1RSetUpdatingPauseTimePercent=25",
         "-XX:G1OldCSetRegionThresholdPercent=5",
         "-XX:SurvivorRatio=5",
-        "-XX:ParallelGCThreads=$threads",
-        "-XX:ConcGCThreads=${max(threads / 4, 1)}",
         "-XX:FlightRecorderOptions=stackdepth=512"
     )
 }
 
+
 plugins {
-    id("me.luna.jaroptimizer").version("1.1")
-    id("dev.fastmc.modsetup.root").version("1.0-SNAPSHOT")
+    id("dev.fastmc.mod-setup").version("1.3.0")
 }
 
 subprojects {
     repositories {
         mavenCentral()
-        maven("https://maven.fastmc.dev/")
+        maven("https://maven.luna5ama.dev/")
         maven("https://libraries.minecraft.net/")
     }
 
@@ -60,15 +52,14 @@ subprojects {
         compileOnly("org.apache.logging.log4j:log4j-api:2.8.1")
         compileOnly("it.unimi.dsi:fastutil:7.1.0")
     }
-}
 
-subprojects {
     tasks {
-        compileKotlin {
+        withType<KotlinCompile> {
             kotlinOptions {
                 freeCompilerArgs += listOf(
                     "-opt-in=kotlin.RequiresOptIn",
                     "-opt-in=kotlin.contracts.ExperimentalContracts",
+                    "-Xbackend-threads=0"
                 )
             }
         }
@@ -77,21 +68,15 @@ subprojects {
 
 tasks {
     val collectJars by register<Copy>("collectJars") {
-        finalizedBy("optimizeJars")
-
         group = "build"
 
         from(
             provider {
-                subprojects.mapNotNull { it.tasks.findByName("releaseJar")?.outputs }
+                subprojects.mapNotNull { it.tasks.findByName("modLoaderJar")?.outputs }
             }
         )
 
-        into(file("$buildDir/libs"))
-    }
-
-    configure<JarOptimizerPluginExtension> {
-        add(collectJars, "dev.fastmc.texture", "org.spongepowered")
+        into(file("${layout.buildDirectory.asFile.get()}/libs"))
     }
 
     assemble {
